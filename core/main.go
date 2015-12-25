@@ -32,7 +32,10 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " auth|upload")
+	fmt.Println(os.Args[0] + " auth|upload|albums")
+	fmt.Println("\tauth")
+	fmt.Println("\tupload <album key> <filename>")
+	fmt.Println("\talbums")
 }
 
 func main() {
@@ -41,13 +44,17 @@ func main() {
 		return
 	}
 
-	// initialize()
-
 	cmd := strings.ToLower(os.Args[1])
 	if cmd == "auth" {
 		auth()
 	} else if cmd == "upload" {
-		upload()
+		if len(os.Args) < 4 {
+			usage()
+			return
+		}
+		upload(os.Args[2], os.Args[3])
+	} else if cmd == "albums" {
+		albums()
 	} else {
 		usage()
 		return
