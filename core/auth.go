@@ -65,7 +65,7 @@ func beginAuth() (*oauth.Credentials, error) {
 		fmt.Print("Error getting temp credentials: " + err.Error())
 		return nil, err
 	}
-	url := oauthAuthorize + "?Access=Full&Permissions=All&oauth_token=" + tempCred.Token
+	url := oauthAuthorize + "?Access=Full&Permissions=Modify&oauth_token=" + tempCred.Token
 	open.Start(url)
 	fmt.Println("Opening browser with " + url)
 	return tempCred, nil
