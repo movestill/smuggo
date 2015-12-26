@@ -9,12 +9,15 @@ import (
 	"github.com/garyburd/go-oauth/oauth"
 	"io"
 	"io/ioutil"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -23,6 +26,7 @@ const (
 	apiAlbums  = "!albums"
 )
 
+// upload transfers a single file to the SmugMug album identifed by key.
 func upload(albumKey string, filename string) {
 	userToken, err := loadToken(userTokenFile)
 	if err != nil {
@@ -30,13 +34,7 @@ func upload(albumKey string, filename string) {
 		return
 	}
 
-	userUri, err := getUser(userToken)
-	if err != nil {
-		return
-	}
-
 	var client = http.Client{}
-	// createAlbum(&client, userToken)
 
 	err = postImage(&client, userToken, albumKey, filename)
 	if err != nil {
@@ -44,6 +42,53 @@ func upload(albumKey string, filename string) {
 	}
 }
 
+// multiUpload uploads files in parallel to the given SmugMug album.
+// ToDo: add support for wildcards on Windows using filepath.Glob().
+func multiUpload(numParallel int, albumKey string, filenames []string) {
+	if numParallel < 1 {
+		fmt.Println("Error, must upload at least 1 file at a time!")
+		return
+	}
+
+	userToken, err := loadToken(userTokenFile)
+	if err != nil {
+		fmt.Println("Error reading " + userTokenFile + ": " + err.Error())
+		return
+	}
+
+	fmt.Println(filenames)
+	var client = http.Client{}
+
+	semaph := make(chan int, numParallel)
+	for _, filename := range filenames {
+		semaph <- 1
+		go func(filename string) {
+			fmt.Println("go " + filename)
+			err := postImage(&client, userToken, albumKey, filename)
+			if err != nil {
+				fmt.Println("Error uploading: " + err.Error())
+			}
+			<-semaph
+		}(filename)
+	}
+
+	for {
+		time.Sleep(time.Second)
+		if len(semaph) == 0 {
+			break
+		}
+	}
+}
+
+// getMediaType determines the value for the Content-Type header field based
+// on the file extension.
+func getMediaType(filename string) string {
+	ext := filepath.Ext(filename)
+	return mime.TypeByExtension(ext)
+}
+
+// createAlbum was test code for exercising the SmugMug API.  It works, but is
+// hard coded for a particular album in a particular location.
 func createAlbum(client *http.Client, credentials *oauth.Credentials) {
 	createUri := apiRoot + "/api/v2/node/R3gfM!children"
 
@@ -94,6 +139,7 @@ func createAlbum(client *http.Client, credentials *oauth.Credentials) {
 	fmt.Println(string(bytes))
 }
 
+// calcMd5 generates the MD5 sum for the given file.
 func calcMd5(imgFileName string) (string, int64, error) {
 	file, err := os.Open(imgFileName)
 	if err != nil {
@@ -113,6 +159,7 @@ func calcMd5(imgFileName string) (string, int64, error) {
 	return fmt.Sprintf("%x", md5Sum), size, nil
 }
 
+// postImage uploads a single image to SmugMug via the POST method.
 func postImage(client *http.Client, credentials *oauth.Credentials,
 	albumKey string, imgFileName string) error {
 
@@ -141,7 +188,7 @@ func postImage(client *http.Client, credentials *oauth.Credentials,
 	_, justImgFileName := filepath.Split(imgFileName)
 	var headers = url.Values{
 		"Accept":              {"application/json"},
-		"Content-Type":        {"image/jpeg"},
+		"Content-Type":        {getMediaType(justImgFileName)},
 		"Content-MD5":         {md5Str},
 		"Content-Length":      {strconv.FormatInt(imgSize, 10)},
 		"X-Smug-ResponseType": {"JSON"},
@@ -182,6 +229,14 @@ type uriJson struct {
 	Uri string
 }
 
+type pagesJson struct {
+	Total          int
+	Start          int
+	Count          int
+	RequestedCount int
+	NextPage       string
+}
+
 type albumJson struct {
 	Uri     string
 	UrlName string
@@ -196,6 +251,7 @@ func (b byUrlName) Less(i, j int) bool { return b[i].UrlName < b[j].UrlName }
 
 type endpointJson struct {
 	Album []albumJson
+	Pages pagesJson
 	User  uriJson
 }
 
@@ -203,7 +259,7 @@ type responseJson struct {
 	Response endpointJson
 }
 
-// Get the URI that serves this user.
+// getUser retrieves the URI that serves the current user.
 func getUser(userToken *oauth.Credentials) (string, error) {
 	var queryParams = url.Values{
 		"_accept":    {"application/json"},
@@ -240,6 +296,7 @@ func getUser(userToken *oauth.Credentials) (string, error) {
 	return respJson.Response.User.Uri, nil
 }
 
+// albums lists all the albums (and their keys) that belong to the user.
 func albums() {
 	userToken, err := loadToken(userTokenFile)
 	if err != nil {
@@ -253,29 +310,60 @@ func albums() {
 	}
 
 	albumsUri := apiRoot + userUri + apiAlbums
-	fmt.Println(albumsUri)
+	var client = http.Client{}
+
+	getAlbumPages(true, &client, userToken, albumsUri, []albumJson{}, pagesJson{})
+}
+
+func getAlbumPages(firstCall bool, client *http.Client,
+	userToken *oauth.Credentials, albumsUri string, albums []albumJson,
+	pages pagesJson) {
+
+	if !firstCall && pages.Start+pages.Count >= pages.Total {
+		sort.Sort(byUrlName(albums))
+		for _, album := range albums {
+			tokens := strings.Split(album.Uri, "/")
+			if len(tokens) > 0 {
+				fmt.Println(album.UrlName + " :: " + tokens[len(tokens)-1])
+			}
+		}
+		return
+	}
+
+	start := 1
+	if !firstCall {
+		start = pages.Start + pages.Count
+		fmt.Println("Getting next page of album list . . .")
+	}
 
 	var queryParams = url.Values{
 		"_accept": {"application/json"},
 		// "filter":     {"Album"},
 		// "filteruri":  {""},
 		"_verbosity": {"1"},
+		"start":      {fmt.Sprintf("%d", start)},
+		"count":      {"100"},
 	}
-	resp, err := oauthClient.Get(nil, userToken, albumsUri, queryParams)
+
+	resp, err := oauthClient.Get(client, userToken, albumsUri, queryParams)
 	if err != nil {
 		fmt.Println("Error getting user endpoint: " + err.Error())
 		return
 	}
 
-	defer resp.Body.Close()
+	bytes, err := func() ([]byte, error) {
+		defer resp.Body.Close()
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	}()
 
-	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading album endpoint: " + err.Error())
 		return
 	}
-
-	fmt.Println(string(bytes))
 
 	var respJson responseJson
 	err = json.Unmarshal(bytes, &respJson)
@@ -289,9 +377,8 @@ func albums() {
 		return
 	}
 
-	sort.Sort(byUrlName(respJson.Response.Album))
+	albumList := append(albums, respJson.Response.Album...)
 
-	for _, album := range respJson.Response.Album {
-		fmt.Println(album.UrlName + " :: " + album.Uri)
-	}
+	getAlbumPages(false, client, userToken, albumsUri,
+		albumList, respJson.Response.Pages)
 }

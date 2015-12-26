@@ -6,9 +6,11 @@ import (
 	"github.com/garyburd/go-oauth/oauth"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
 
+// The names of the token files.
 const (
 	apiTokenFile  = "apiToken.json"
 	userTokenFile = "userToken.json"
@@ -18,6 +20,7 @@ func init() {
 	authInit()
 }
 
+// loadToken imports tokens from the given JSON file.
 func loadToken(filename string) (*oauth.Credentials, error) {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -30,12 +33,14 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 	return &token, nil
 }
 
+// usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " auth|upload|albums")
+	fmt.Println(os.Args[0] + " auth|albums|upload|multiupload")
 	fmt.Println("\tauth")
-	fmt.Println("\tupload <album key> <filename>")
 	fmt.Println("\talbums")
+	fmt.Println("\tupload <album key> <filename>")
+	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> . . . <filename n>")
 }
 
 func main() {
@@ -44,18 +49,29 @@ func main() {
 		return
 	}
 
-	cmd := strings.ToLower(os.Args[1])
-	if cmd == "auth" {
+	switch strings.ToLower(os.Args[1]) {
+	case "auth":
 		auth()
-	} else if cmd == "upload" {
+	case "upload":
 		if len(os.Args) < 4 {
 			usage()
 			return
 		}
 		upload(os.Args[2], os.Args[3])
-	} else if cmd == "albums" {
+	case "albums":
 		albums()
-	} else {
+	case "multiupload":
+		if len(os.Args) < 5 {
+			usage()
+			return
+		}
+		numParallel, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			usage()
+			return
+		}
+		multiUpload(numParallel, os.Args[3], os.Args[4:])
+	default:
 		usage()
 		return
 	}
