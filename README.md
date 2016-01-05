@@ -21,7 +21,17 @@ in December 2014, so it was almost like starting from zero, again.
 smuggo uses SmugMug's v2 API.  This API is considered **beta**, so use at
 your own risk!
 
-### Authorization (do this first!)
+### Get a SmugMug API Key (do this first!)
+
+The first step is to get your own API key from SmugMug.  Go to this page to
+request a key:  https://api.smugmug.com/api/developer/apply
+
+You must be a SmugMug customer to get an key, but that's
+probably a safe assumption if you want to use smuggo.  After getting your key,
+create an ````apiToken.json```` file.  There is an example ````apiToken.json````
+in the examples folder.
+
+### Authorization (do this second!)
 
 smuggo **must be authorized** before it can do anything with your SmugMug
 account.  Authorize it by typing:
@@ -93,11 +103,22 @@ Note that I haven't implemented wildcard support for Windows, yet.
 
 ## Building from Source
 
-To Do
+Download and install Go v1.5.x.  Be sure to set your GOPATH environment
+variable as described in the Go installation instructions.
 
-### Request an API key from SmugMug
+Get the dependencies:
 
-To Do
+````bash
+go get github.com/garyburd/go-oauth
+
+go get github.com/skratchdot/open-golang
+````
+
+Build:
+
+````bash
+go build -o smuggo main.go main.go auth.go upload.go albums.go
+````
 
 ## Credits
 
