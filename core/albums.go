@@ -109,9 +109,9 @@ func printAlbums(albums []albumJson) {
 
 // albums lists all the albums (and their keys) that belong to the user.
 func albums() {
-	userToken, err := loadToken(userTokenFile)
+	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading " + userTokenFile + ": " + err.Error())
+		fmt.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 

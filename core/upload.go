@@ -17,9 +17,9 @@ import (
 
 // upload transfers a single file to the SmugMug album identifed by key.
 func upload(albumKey string, filename string) {
-	userToken, err := loadToken(userTokenFile)
+	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading " + userTokenFile + ": " + err.Error())
+		fmt.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 
@@ -39,9 +39,9 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 		return
 	}
 
-	userToken, err := loadToken(userTokenFile)
+	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading " + userTokenFile + ": " + err.Error())
+		fmt.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 

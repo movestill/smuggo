@@ -7,6 +7,7 @@ import (
 	"github.com/skratchdot/open-golang/open"
 	"io/ioutil"
 	"os"
+	"os/user"
 )
 
 const (
@@ -16,10 +17,25 @@ const (
 	oauthAccessToken  = oauthOrigin + "/services/oauth/1.0a/getAccessToken"
 )
 
+// Handles all OAuth stuff.
 var oauthClient oauth.Client
 
+// Save the home directory for storing JSON files, later.
+var userHomeDir string
+
+// This is appended to userHomeDir.
+const smuggoDir = "/.smuggo/"
+
 func authInit() {
-	apiToken, err := loadToken(apiTokenFile)
+	user, err := user.Current()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	userHomeDir = user.HomeDir
+
+	apiToken, err := loadToken(userHomeDir + smuggoDir + apiTokenFile)
 	if err != nil {
 		fmt.Println("Error reading " + apiTokenFile + ": " + err.Error())
 		os.Exit(1)
@@ -33,6 +49,7 @@ func authInit() {
 	}
 }
 
+// Authorize smuggo for the user's account.
 func auth() {
 	tempCred, err := beginAuth()
 	if err != nil {
@@ -51,14 +68,17 @@ func auth() {
 		return
 	}
 
-	if err := storeAccessToken(accessCred, userTokenFile); err != nil {
+	fullPathTokenFile := userHomeDir + smuggoDir + userTokenFile
+
+	if err := storeAccessToken(accessCred, fullPathTokenFile); err != nil {
 		fmt.Println("Error saving access token: " + err.Error())
 		return
 	}
 
-	fmt.Println("smuggo authorized.  Access token saved to " + userTokenFile)
+	fmt.Println("smuggo authorized.  Access token saved to " + fullPathTokenFile)
 }
 
+// Start the auth process.
 func beginAuth() (*oauth.Credentials, error) {
 	tempCred, err := oauthClient.RequestTemporaryCredentials(nil, "oob", nil)
 	if err != nil {
@@ -71,6 +91,8 @@ func beginAuth() (*oauth.Credentials, error) {
 	return tempCred, nil
 }
 
+// Send user's verification code back to SmugMug and get a permanent OAuth
+// token.
 func completeAuth(tempCred *oauth.Credentials, verifyCode string) (*oauth.Credentials, error) {
 	credentials, _, err := oauthClient.RequestToken(nil, tempCred, verifyCode)
 	if err != nil {
@@ -80,6 +102,7 @@ func completeAuth(tempCred *oauth.Credentials, verifyCode string) (*oauth.Creden
 	return credentials, nil
 }
 
+// Write OAuth token to disk.
 func storeAccessToken(accessCred *oauth.Credentials, filename string) error {
 	bytes, err := json.MarshalIndent(*accessCred, "", "    ")
 	if err != nil {
@@ -91,4 +114,10 @@ func storeAccessToken(accessCred *oauth.Credentials, filename string) error {
 	}
 
 	return nil
+}
+
+// Get the user token from the appropriate location.
+func loadUserToken() (*oauth.Credentials, error) {
+	fullPathTokenFile := userHomeDir + smuggoDir + userTokenFile
+	return loadToken(fullPathTokenFile)
 }

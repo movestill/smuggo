@@ -28,8 +28,9 @@ request a key:  https://api.smugmug.com/api/developer/apply
 
 You must be a SmugMug customer to get an key, but that's
 probably a safe assumption if you want to use smuggo.  After getting your key,
-create an ````apiToken.json```` file.  There is an example ````apiToken.json````
-in the examples folder.
+create a ````.smuggo```` folder off of your home directory.  Next, create an
+````apiToken.json```` file in the ````.smuggo```` folder.  There is an example
+````apiToken.json```` in the examples folder.
 
 ### Authorization (do this second!)
 
