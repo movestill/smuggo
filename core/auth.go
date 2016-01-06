@@ -26,7 +26,8 @@ var userHomeDir string
 // This is appended to userHomeDir.
 const smuggoDir = "/.smuggo/"
 
-func authInit() {
+// Get and store the user's home directory.
+func getUserHomeDir() string {
 	user, err := user.Current()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -35,9 +36,22 @@ func authInit() {
 
 	userHomeDir = user.HomeDir
 
+	return userHomeDir
+}
+
+func authInit() {
+	getUserHomeDir()
+
+	err := os.MkdirAll(userHomeDir+smuggoDir, os.ModeDir|0700)
+	if err != nil {
+		fmt.Println("Could not create smuggo data folder: " + err.Error())
+		os.Exit(1)
+	}
+
 	apiToken, err := loadToken(userHomeDir + smuggoDir + apiTokenFile)
 	if err != nil {
 		fmt.Println("Error reading " + apiTokenFile + ": " + err.Error())
+		fmt.Println("Type \"" + os.Args[0] + " apikey\" to enter your SmugMug API key.")
 		os.Exit(1)
 	}
 
@@ -46,6 +60,30 @@ func authInit() {
 		ResourceOwnerAuthorizationURI: oauthAuthorize,
 		TokenRequestURI:               oauthAccessToken,
 		Credentials:                   *apiToken,
+	}
+}
+
+func apikey() {
+	getUserHomeDir()
+
+	fmt.Print("Enter your SmugMug key: ")
+	var key string
+	if _, err := fmt.Scanln(&key); err != nil {
+		fmt.Println("Reading key: " + err.Error())
+		return
+	}
+
+	fmt.Print("Enter your SmugMug secret: ")
+	var secret string
+	if _, err := fmt.Scanln(&secret); err != nil {
+		fmt.Println("Reading secret: " + err.Error())
+		return
+	}
+
+	credentials := oauth.Credentials{key, secret}
+	err := storeAccessData(&credentials, userHomeDir+smuggoDir+apiTokenFile)
+	if err != nil {
+		fmt.Println("Saving API key: " + err.Error())
 	}
 }
 
@@ -59,7 +97,7 @@ func auth() {
 	fmt.Print("Enter your verification code: ")
 	var verifyCode string
 	if _, err := fmt.Scanln(&verifyCode); err != nil {
-		fmt.Println("Error reading verification code " + err.Error())
+		fmt.Println("Reading verification code: " + err.Error())
 		return
 	}
 
@@ -70,7 +108,7 @@ func auth() {
 
 	fullPathTokenFile := userHomeDir + smuggoDir + userTokenFile
 
-	if err := storeAccessToken(accessCred, fullPathTokenFile); err != nil {
+	if err := storeAccessData(accessCred, fullPathTokenFile); err != nil {
 		fmt.Println("Error saving access token: " + err.Error())
 		return
 	}
@@ -102,8 +140,8 @@ func completeAuth(tempCred *oauth.Credentials, verifyCode string) (*oauth.Creden
 	return credentials, nil
 }
 
-// Write OAuth token to disk.
-func storeAccessToken(accessCred *oauth.Credentials, filename string) error {
+// Write OAuth token or SmugMug API key to disk.
+func storeAccessData(accessCred *oauth.Credentials, filename string) error {
 	bytes, err := json.MarshalIndent(*accessCred, "", "    ")
 	if err != nil {
 		return err

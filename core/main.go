@@ -16,10 +16,6 @@ const (
 	userTokenFile = "userToken.json"
 )
 
-func init() {
-	authInit()
-}
-
 // loadToken imports tokens from the given JSON file.
 func loadToken(filename string) (*oauth.Credentials, error) {
 	bytes, err := ioutil.ReadFile(filename)
@@ -36,7 +32,8 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 // usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " auth|albums|upload|multiupload")
+	fmt.Println(os.Args[0] + " apikey|auth|albums|upload|multiupload")
+	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
 	fmt.Println("\tupload <album key> <filename>")
@@ -49,7 +46,16 @@ func main() {
 		return
 	}
 
-	switch strings.ToLower(os.Args[1]) {
+	loweredCmd := strings.ToLower(os.Args[1])
+	if loweredCmd == "apikey" {
+		apikey()
+		return
+	}
+
+	// Normal code path where an API key must exist.
+	authInit()
+
+	switch loweredCmd {
 	case "auth":
 		auth()
 	case "upload":
