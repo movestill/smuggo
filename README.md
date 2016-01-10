@@ -102,7 +102,10 @@ directory:
 smuggo multiupload 4 5Jbd2q awesome_photo1.jpg awesome_photo2.jpg *.gif
 ```
 
-Note that I haven't implemented wildcard support for Windows, yet.
+Note that I haven't tested wildcard support for Windows, yet.  Wildcard
+expansion is a feature of the shell on OS X and Linux, but needs to be done by
+the application on Windows.  I simulated it with unit tests, but haven't tried
+it on an actual Windows system, yet.
 
 ## Building from Source
 
@@ -120,6 +123,7 @@ go get github.com/skratchdot/open-golang
 Build:
 
 ````bash
+cd core
 go build -o smuggo main.go main.go auth.go upload.go albums.go
 ````
 

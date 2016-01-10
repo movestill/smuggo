@@ -31,8 +31,26 @@ func upload(albumKey string, filename string) {
 	}
 }
 
+// expandFileNames applies pattern matching to the given list of filenames.
+// Pass filepath.Glob as the expander function.  The pattern matching function
+// is a parameter for testing purposes.
+func expandFileNames(
+	filenames []string, expander func(pattern string) ([]string, error)) []string {
+
+	expanded := make([]string, 0, 20)
+
+	for _, fname := range filenames {
+		matches, err := expander(fname)
+		if err != nil {
+			continue
+		}
+		expanded = append(expanded, matches...)
+	}
+
+	return expanded
+}
+
 // multiUpload uploads files in parallel to the given SmugMug album.
-// ToDo: add support for wildcards on Windows using filepath.Glob().
 func multiUpload(numParallel int, albumKey string, filenames []string) {
 	if numParallel < 1 {
 		fmt.Println("Error, must upload at least 1 file at a time!")
@@ -45,11 +63,12 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 		return
 	}
 
-	fmt.Println(filenames)
+	expFileNames = expandFileNames(filenames, filepath.Glob)
+	fmt.Println(expFileNames)
 	var client = http.Client{}
 
 	semaph := make(chan int, numParallel)
-	for _, filename := range filenames {
+	for _, filename := range expFileNames {
 		semaph <- 1
 		go func(filename string) {
 			fmt.Println("go " + filename)

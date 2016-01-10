@@ -37,7 +37,7 @@ func usage() {
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
 	fmt.Println("\tupload <album key> <filename>")
-	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> . . . <filename n>")
+	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")
 }
 
 func main() {
@@ -59,7 +59,7 @@ func main() {
 	case "auth":
 		auth()
 	case "upload":
-		if len(os.Args) < 4 {
+		if len(os.Args) != 4 {
 			usage()
 			return
 		}
