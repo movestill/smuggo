@@ -63,7 +63,7 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 		return
 	}
 
-	expFileNames = expandFileNames(filenames, filepath.Glob)
+	expFileNames := expandFileNames(filenames, filepath.Glob)
 	fmt.Println(expFileNames)
 	var client = http.Client{}
 
