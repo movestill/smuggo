@@ -102,11 +102,6 @@ directory:
 smuggo multiupload 4 5Jbd2q awesome_photo1.jpg awesome_photo2.jpg *.gif
 ```
 
-Note that I haven't tested wildcard support for Windows, yet.  Wildcard
-expansion is a feature of the shell on OS X and Linux, but needs to be done by
-the application on Windows.  I simulated it with unit tests, but haven't tried
-it on an actual Windows system, yet.
-
 ## Building from Source
 
 Download and install Go v1.5.x.  Be sure to set your GOPATH environment
