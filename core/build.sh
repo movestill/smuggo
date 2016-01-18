@@ -2,7 +2,7 @@
 echo 'Formatting Go files.'
 go fmt *.go
 SOURCE_FILES="main.go auth.go upload.go albums.go"
-TEST_FILES="expandFileNames_test.go"
+TEST_FILES="expandFileNames_test.go aggregateTerms_test.go"
 
 WIN32DIR="win32"
 WIN64DIR="x64"

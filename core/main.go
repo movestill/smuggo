@@ -32,10 +32,11 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 // usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " apikey|auth|albums|upload|multiupload")
+	fmt.Println(os.Args[0] + " apikey|auth|albums|search|upload|multiupload")
 	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
+	fmt.Println("\tsearch <search term 1> ... <search term n>")
 	fmt.Println("\tupload <album key> <filename>")
 	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")
 }
@@ -66,6 +67,12 @@ func main() {
 		upload(os.Args[2], os.Args[3])
 	case "albums":
 		albums()
+	case "search":
+		if len(os.Args) < 3 {
+			usage()
+			return
+		}
+		search(os.Args[2:])
 	case "multiupload":
 		if len(os.Args) < 5 {
 			usage()

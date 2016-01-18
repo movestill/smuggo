@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	apiRoot    = "https://api.smugmug.com"
-	apiCurUser = apiRoot + "/api/v2!authuser"
-	apiAlbums  = "!albums"
+	apiRoot      = "https://api.smugmug.com"
+	apiCurUser   = apiRoot + "/api/v2!authuser"
+	apiAlbums    = "!albums"
+	searchAlbums = apiRoot + "/api/v2/album!search"
 )
 
 const albumPageSize = 100
@@ -35,6 +36,11 @@ type pagesJson struct {
 	NextPage       string
 }
 
+type searchAlbumJson struct {
+	AlbumKey string
+	UrlName  string
+}
+
 type albumJson struct {
 	Uri     string
 	UrlName string
@@ -48,9 +54,10 @@ func (b byUrlName) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 func (b byUrlName) Less(i, j int) bool { return b[i].UrlName < b[j].UrlName }
 
 type endpointJson struct {
-	Album []albumJson
-	Pages pagesJson
-	User  uriJson
+	Album             []albumJson
+	Pages             pagesJson
+	User              uriJson
+	AlbumSearchResult []searchAlbumJson
 }
 
 type responseJson struct {
@@ -104,6 +111,107 @@ func printAlbums(albums []albumJson) {
 		if len(tokens) > 0 {
 			fmt.Println(album.UrlName + " :: " + tokens[len(tokens)-1])
 		}
+	}
+}
+
+// aggregateTerms combines search terms into a single string with each search
+// term separated by a plus sign.
+func aggregateTerms(terms []string) string {
+	var combinedTerms string
+	for i, term := range terms {
+		combinedTerms += term
+		if i < len(terms)-1 {
+			combinedTerms += "+"
+		}
+	}
+
+	return combinedTerms
+}
+
+// search is the entry point to album search.
+func search(terms []string) {
+	userToken, err := loadUserToken()
+	if err != nil {
+		fmt.Println("Error reading OAuth token: " + err.Error())
+		return
+	}
+
+	userUri, err := getUser(userToken)
+	if err != nil {
+		return
+	}
+
+	combinedTerms := aggregateTerms(terms)
+	var client = http.Client{}
+
+	searchRequest(&client, userToken, userUri, combinedTerms, 1)
+}
+
+// searchRequest sends the search request to SmugMug and asks for the entries beginning at start.
+func searchRequest(client *http.Client, userToken *oauth.Credentials, userUri string, query string, start int) {
+	var queryParams = url.Values{
+		"_accept":       {"application/json"},
+		"_verbosity":    {"1"},
+		"Scope":         {userUri},
+		"SortDirection": {"Descending"},
+		"SortMethod":    {"Rank"},
+		"Text":          {query},
+		"start":         {fmt.Sprintf("%d", start)},
+		"count":         {"15"},
+	}
+
+	resp, err := oauthClient.Get(client, userToken, searchAlbums, queryParams)
+	if err != nil {
+		return
+	}
+
+	bytes, err := func() ([]byte, error) {
+		defer resp.Body.Close()
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	}()
+
+	if err != nil {
+		fmt.Println("Reading search results: " + err.Error())
+		return
+	}
+
+	var respJson responseJson
+	err = json.Unmarshal(bytes, &respJson)
+	if err != nil {
+		fmt.Println("Decoding album search endpoint JSON: " + err.Error())
+		return
+	}
+
+	if len(respJson.Response.AlbumSearchResult) < 1 {
+		fmt.Println("No search results found.")
+		return
+	}
+
+	printSearchResults(respJson.Response.AlbumSearchResult)
+
+	pages := &respJson.Response.Pages
+	if pages.Count+pages.Start < pages.Total {
+		fmt.Print("Get more results? (y or n) ")
+		var ans string
+		if _, err := fmt.Scan(&ans); err != nil {
+			fmt.Println("Reading answer: " + err.Error())
+			return
+		}
+		if ans == "y" || ans == "Y" {
+			fmt.Print("\n")
+			searchRequest(client, userToken, userUri, query, pages.Count+pages.Start)
+		}
+	}
+}
+
+// printSearchResults outputs the album names and keys to stdout.
+func printSearchResults(results []searchAlbumJson) {
+	for _, album := range results {
+		fmt.Println(album.UrlName + " :: " + album.AlbumKey)
 	}
 }
 

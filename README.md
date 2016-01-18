@@ -67,6 +67,18 @@ utility to find the one you want.  SmugMug also transfers a large amount of
 data when listing albums.  This command may take some time to complete if you
 have a large number of albums.
 
+If you have a large number of albums, finding the right album alphabetically
+isn't the most efficient.  smuggo supports SmugMug's album search capability.
+SmugMug searches both the title and description for search terms that you
+supply.
+
+````bash
+smuggo search <search term 1> ... <search term n>
+````
+
+smuggo will list the first 15 results and then ask if you wish to list more
+results.
+
 ### Uploading Files
 
 My normal use case is to upload a single file since CaptureOne "opens" each
