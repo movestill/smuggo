@@ -195,16 +195,10 @@ func searchRequest(client *http.Client, userToken *oauth.Credentials, userUri st
 
 	pages := &respJson.Response.Pages
 	if pages.Count+pages.Start < pages.Total {
-		fmt.Print("Get more results? (y or n) ")
-		var ans string
-		if _, err := fmt.Scan(&ans); err != nil {
-			fmt.Println("Reading answer: " + err.Error())
-			return
-		}
-		if ans == "y" || ans == "Y" {
-			fmt.Print("\n")
-			searchRequest(client, userToken, userUri, query, pages.Count+pages.Start)
-		}
+		fmt.Println("Press Enter for more results or Ctrl-C to quit.")
+		var foo string
+		fmt.Scanln(&foo)
+		searchRequest(client, userToken, userUri, query, pages.Count+pages.Start)
 	}
 }
 
