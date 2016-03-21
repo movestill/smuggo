@@ -1,6 +1,6 @@
 [submodule "core/vendor/go-oauth"]
 	path = core/vendor/go-oauth
-	url = https://gitub.com/garyburd/go-oauth
+	url = https://github.com/garyburd/go-oauth
 [submodule "core/vendor/open-golang"]
 	path = core/vendor/open-golang
-	url = https://gitub.com/skratchdot/open-golang
+	url = https://github.com/skratchdot/open-golang
