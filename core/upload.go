@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/garyburd/go-oauth/oauth"
+	"go-oauth/oauth"
 	"io"
 	"io/ioutil"
 	"mime"

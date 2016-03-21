@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/garyburd/go-oauth/oauth"
+	"go-oauth/oauth"
 	"io/ioutil"
 	"net/http"
 	"net/url"

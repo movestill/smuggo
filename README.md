@@ -116,15 +116,14 @@ smuggo multiupload 4 5Jbd2q awesome_photo1.jpg awesome_photo2.jpg *.gif
 
 ## Building from Source
 
-Download and install Go v1.5.x.  Be sure to set your GOPATH environment
+Download and install Go v1.6.x.  Be sure to set your GOPATH environment
 variable as described in the Go installation instructions.
 
-Get the dependencies:
+Get the dependencies (sub-modules):
 
 ````bash
-go get github.com/garyburd/go-oauth
-
-go get github.com/skratchdot/open-golang
+git submodule init 
+git submodule update
 ````
 
 Build:

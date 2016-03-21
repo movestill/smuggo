@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/garyburd/go-oauth/oauth"
-	"github.com/skratchdot/open-golang/open"
+	"go-oauth/oauth"
 	"io/ioutil"
+	"open-golang/open"
 	"os"
 	"os/user"
 )
