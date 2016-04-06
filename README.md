@@ -28,11 +28,11 @@ request a key:  https://api.smugmug.com/api/developer/apply
 
 You must be a SmugMug customer to get an key, but that's
 probably a safe assumption if you want to use smuggo.  After getting your key,
-enter your key into smuggo by using the ````apikey```` command.
+enter your key into smuggo by using the `apikey` command.
 
-````bash
+```bash
 smuggo apikey
-````
+```
 
 ### Authorization (do this second!)
 
@@ -72,9 +72,9 @@ isn't the most efficient.  smuggo supports SmugMug's album search capability.
 SmugMug searches both the title and description for search terms that you
 supply.
 
-````bash
+```bash
 smuggo search <search term 1> ... <search term n>
-````
+```
 
 smuggo will list the first 15 results and then ask if you wish to list more
 results.
@@ -121,17 +121,17 @@ variable as described in the Go installation instructions.
 
 Get the dependencies (sub-modules):
 
-````bash
-git submodule init 
+```bash
+git submodule init
 git submodule update
-````
+```
 
 Build:
 
-````bash
+```bash
 cd core
 go build -o smuggo main.go main.go auth.go upload.go albums.go
-````
+```
 
 ## Credits
 
