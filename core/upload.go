@@ -6,6 +6,7 @@ import (
 	"go-oauth/oauth"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -19,7 +20,7 @@ import (
 func upload(albumKey string, filename string) {
 	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading OAuth token: " + err.Error())
+		log.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 
@@ -27,7 +28,7 @@ func upload(albumKey string, filename string) {
 
 	err = postImage(&client, userToken, albumKey, filename)
 	if err != nil {
-		fmt.Println("Error uploading: " + err.Error())
+		log.Println("Error uploading: " + err.Error())
 	}
 }
 
@@ -53,13 +54,13 @@ func expandFileNames(
 // multiUpload uploads files in parallel to the given SmugMug album.
 func multiUpload(numParallel int, albumKey string, filenames []string) {
 	if numParallel < 1 {
-		fmt.Println("Error, must upload at least 1 file at a time!")
+		log.Println("Error, must upload at least 1 file at a time!")
 		return
 	}
 
 	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading OAuth token: " + err.Error())
+		log.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 
@@ -74,7 +75,7 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 			fmt.Println("go " + filename)
 			err := postImage(&client, userToken, albumKey, filename)
 			if err != nil {
-				fmt.Println("Error uploading: " + err.Error())
+				log.Println("Error uploading: " + err.Error())
 			}
 			<-semaph
 		}(filename)

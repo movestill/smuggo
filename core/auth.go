@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-oauth/oauth"
 	"io/ioutil"
+	"log"
 	"open-golang/open"
 	"os"
 	"os/user"
@@ -30,7 +31,7 @@ const smuggoDir = "/.smuggo/"
 func getUserHomeDir() string {
 	user, err := user.Current()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		os.Exit(1)
 	}
 
@@ -44,14 +45,14 @@ func authInit() {
 
 	err := os.MkdirAll(userHomeDir+smuggoDir, os.ModeDir|0700)
 	if err != nil {
-		fmt.Println("Could not create smuggo data folder: " + err.Error())
+		log.Println("Could not create smuggo data folder: " + err.Error())
 		os.Exit(1)
 	}
 
 	apiToken, err := loadToken(userHomeDir + smuggoDir + apiTokenFile)
 	if err != nil {
-		fmt.Println("Error reading " + apiTokenFile + ": " + err.Error())
-		fmt.Println("Type \"" + os.Args[0] + " apikey\" to enter your SmugMug API key.")
+		log.Println("Error reading " + apiTokenFile + ": " + err.Error())
+		log.Println("Type \"" + os.Args[0] + " apikey\" to enter your SmugMug API key.")
 		os.Exit(1)
 	}
 
@@ -109,7 +110,7 @@ func auth() {
 	fullPathTokenFile := userHomeDir + smuggoDir + userTokenFile
 
 	if err := storeAccessData(accessCred, fullPathTokenFile); err != nil {
-		fmt.Println("Error saving access token: " + err.Error())
+		log.Println("Error saving access token: " + err.Error())
 		return
 	}
 
@@ -120,7 +121,7 @@ func auth() {
 func beginAuth() (*oauth.Credentials, error) {
 	tempCred, err := oauthClient.RequestTemporaryCredentials(nil, "oob", nil)
 	if err != nil {
-		fmt.Print("Error getting temp credentials: " + err.Error())
+		log.Print("Error getting temp credentials: " + err.Error())
 		return nil, err
 	}
 	url := oauthAuthorize + "?Access=Full&Permissions=Modify&oauth_token=" + tempCred.Token
@@ -134,7 +135,7 @@ func beginAuth() (*oauth.Credentials, error) {
 func completeAuth(tempCred *oauth.Credentials, verifyCode string) (*oauth.Credentials, error) {
 	credentials, _, err := oauthClient.RequestToken(nil, tempCred, verifyCode)
 	if err != nil {
-		fmt.Println("Error getting token: " + err.Error())
+		log.Println("Error getting token: " + err.Error())
 		return nil, err
 	}
 	return credentials, nil

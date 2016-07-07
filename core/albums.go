@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go-oauth/oauth"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -72,7 +73,7 @@ func getUser(userToken *oauth.Credentials) (string, error) {
 	}
 	resp, err := oauthClient.Get(nil, userToken, apiCurUser, queryParams)
 	if err != nil {
-		fmt.Println("Error getting user endpoint: " + err.Error())
+		log.Println("Error getting user endpoint: " + err.Error())
 		return "", err
 	}
 
@@ -80,7 +81,7 @@ func getUser(userToken *oauth.Credentials) (string, error) {
 
 	bytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading user endpoint: " + err.Error())
+		log.Println("Error reading user endpoint: " + err.Error())
 		return "", err
 	}
 
@@ -91,7 +92,7 @@ func getUser(userToken *oauth.Credentials) (string, error) {
 	var respJson responseJson
 	err = json.Unmarshal(bytes, &respJson)
 	if err != nil {
-		fmt.Println("Error decoding user endpoint JSON: " + err.Error())
+		log.Println("Error decoding user endpoint JSON: " + err.Error())
 		return "", err
 	}
 
@@ -132,7 +133,7 @@ func aggregateTerms(terms []string) string {
 func search(terms []string) {
 	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading OAuth token: " + err.Error())
+		log.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 
@@ -175,14 +176,14 @@ func searchRequest(client *http.Client, userToken *oauth.Credentials, userUri st
 	}()
 
 	if err != nil {
-		fmt.Println("Reading search results: " + err.Error())
+		log.Println("Reading search results: " + err.Error())
 		return
 	}
 
 	var respJson responseJson
 	err = json.Unmarshal(bytes, &respJson)
 	if err != nil {
-		fmt.Println("Decoding album search endpoint JSON: " + err.Error())
+		log.Println("Decoding album search endpoint JSON: " + err.Error())
 		return
 	}
 
@@ -213,7 +214,7 @@ func printSearchResults(results []searchAlbumJson) {
 func albums() {
 	userToken, err := loadUserToken()
 	if err != nil {
-		fmt.Println("Error reading OAuth token: " + err.Error())
+		log.Println("Error reading OAuth token: " + err.Error())
 		return
 	}
 
@@ -319,14 +320,14 @@ func getAlbumPage(
 	}()
 
 	if err != nil {
-		fmt.Println("Reading albums: " + err.Error())
+		log.Println("Reading albums: " + err.Error())
 		return
 	}
 
 	var respJson responseJson
 	err = json.Unmarshal(bytes, &respJson)
 	if err != nil {
-		fmt.Println("Decoding album endpoint JSON: " + err.Error())
+		log.Println("Decoding album endpoint JSON: " + err.Error())
 		return
 	}
 
