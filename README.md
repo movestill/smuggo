@@ -14,6 +14,7 @@ strike at home.
 smuggo is also an excuse to get back into the Go language.  I last touched it
 in December 2014, so it was almost like starting from zero, again.
 
+
 ## Usage
 
 ### WARNING
@@ -114,6 +115,7 @@ directory:
 smuggo multiupload 4 5Jbd2q awesome_photo1.jpg awesome_photo2.jpg *.gif
 ```
 
+
 ## Building from Source
 
 Download and install Go v1.6.x.  Be sure to set your GOPATH environment
@@ -132,6 +134,11 @@ Build:
 cd core
 go build -o smuggo main.go main.go auth.go upload.go albums.go
 ```
+
+## License
+
+smuggo is licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
+
 
 ## Credits
 
