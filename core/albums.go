@@ -39,7 +39,7 @@ type pagesJson struct {
 
 type searchAlbumJson struct {
 	AlbumKey string
-	UrlName  string
+	Name     string
 }
 
 type albumJson struct {
@@ -55,14 +55,24 @@ func (b byUrlName) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 func (b byUrlName) Less(i, j int) bool { return b[i].UrlName < b[j].UrlName }
 
 type endpointJson struct {
-	Album             []albumJson
-	Pages             pagesJson
-	User              uriJson
-	AlbumSearchResult []searchAlbumJson
+	Album []albumJson
+	Pages pagesJson
+	User  uriJson
 }
 
+// Standard top level response from SmugMug API.
 type responseJson struct {
 	Response endpointJson
+}
+
+type searchJson struct {
+	Album []searchAlbumJson
+	Pages pagesJson
+}
+
+// Top level response for search from SmugMug API.
+type searchResponseJson struct {
+	Response searchJson
 }
 
 // getUser retrieves the URI that serves the current user.
@@ -153,6 +163,8 @@ func searchRequest(client *http.Client, userToken *oauth.Credentials, userUri st
 	var queryParams = url.Values{
 		"_accept":       {"application/json"},
 		"_verbosity":    {"1"},
+		"_filter":       {"Album,Name,AlbumKey"},
+		"_filteruri":    {""},
 		"Scope":         {userUri},
 		"SortDirection": {"Descending"},
 		"SortMethod":    {"Rank"},
@@ -180,19 +192,19 @@ func searchRequest(client *http.Client, userToken *oauth.Credentials, userUri st
 		return
 	}
 
-	var respJson responseJson
+	var respJson searchResponseJson
 	err = json.Unmarshal(bytes, &respJson)
 	if err != nil {
 		log.Println("Decoding album search endpoint JSON: " + err.Error())
 		return
 	}
 
-	if len(respJson.Response.AlbumSearchResult) < 1 {
+	if len(respJson.Response.Album) < 1 {
 		fmt.Println("No search results found.")
 		return
 	}
 
-	printSearchResults(respJson.Response.AlbumSearchResult)
+	printSearchResults(respJson.Response.Album)
 
 	pages := &respJson.Response.Pages
 	if pages.Count+pages.Start < pages.Total {
@@ -206,7 +218,7 @@ func searchRequest(client *http.Client, userToken *oauth.Credentials, userUri st
 // printSearchResults outputs the album names and keys to stdout.
 func printSearchResults(results []searchAlbumJson) {
 	for _, album := range results {
-		fmt.Println(album.UrlName + " :: " + album.AlbumKey)
+		fmt.Println(album.Name + " :: " + album.AlbumKey)
 	}
 }
 
