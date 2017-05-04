@@ -2,7 +2,7 @@
 echo 'Formatting Go files.'
 go fmt *.go
 SOURCE_FILES="main.go auth.go upload.go albums.go"
-TEST_FILES="expandFileNames_test.go aggregateTerms_test.go"
+TEST_FILES="expandFileNames_test.go aggregateTerms_test.go upload_test.go"
 
 WIN32DIR="win32"
 WIN64DIR="x64"
@@ -23,7 +23,7 @@ fi
 case "$1" in
     test)
         echo 'Testing smuggo.'
-        go test $SOURCE_FILES $TEST_FILES
+        go test -test.v $SOURCE_FILES $TEST_FILES
         ;;
     win32)
         echo 'Building Windows x86 smuggo.exe.'

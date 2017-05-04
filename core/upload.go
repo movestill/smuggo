@@ -16,6 +16,7 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"go-oauth/oauth"
 	"io"
@@ -32,6 +33,11 @@ import (
 
 const uploadUri = "https://upload.smugmug.com/"
 
+type uploadResponseJson struct {
+	Stat    string
+	Message string
+}
+
 // upload transfers a single file to the SmugMug album identifed by key.
 func upload(albumKey string, filename string) {
 	userToken, err := loadUserToken()
@@ -42,7 +48,7 @@ func upload(albumKey string, filename string) {
 
 	var client = http.Client{}
 
-	err = postImage(&client, uploadUri, userToken, albumKey, filename)
+	err = postImage(&client, uploadUri, userToken, albumKey, filename, 3)
 	if err != nil {
 		log.Println("Error uploading: " + err.Error())
 	}
@@ -89,7 +95,7 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 		semaph <- 1
 		go func(filename string) {
 			fmt.Println("go " + filename)
-			err := postImage(&client, uploadUri, userToken, albumKey, filename)
+			err := postImage(&client, uploadUri, userToken, albumKey, filename, 3)
 			if err != nil {
 				log.Println("Error uploading: " + err.Error())
 			}
@@ -135,7 +141,7 @@ func calcMd5(imgFileName string) (string, int64, error) {
 // postImage uploads a single image to SmugMug via the POST method.
 // uri is the protocol + hostname of the server
 func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
-	albumKey string, imgFileName string) error {
+	albumKey string, imgFileName string, tries int) error {
 
 	md5Str, imgSize, err := calcMd5(imgFileName)
 	if err != nil {
@@ -179,21 +185,45 @@ func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 		return nil
 	}
 
-	var resp *http.Response
-	resp, err = client.Do(req)
-	if err != nil {
-		return err
+	for tryCount := 0; tryCount < tries; tryCount++ {
+		var resp *http.Response
+		resp, err = client.Do(req)
+		if err != nil {
+			log.Println("Error sending POST request: " + err.Error())
+			if tryCount < tries-1 {
+				continue
+			}
+			return err
+		}
+
+		defer resp.Body.Close()
+
+		bytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error reading response: " + err.Error())
+			if tryCount < tries-1 {
+				continue
+			}
+			return err
+		}
+
+		fmt.Println(resp.Status)
+		fmt.Println(string(bytes))
+
+		var respJson uploadResponseJson
+		err = json.Unmarshal(bytes, &respJson)
+		if err != nil {
+			log.Println("Error decoding upload response JSON: " + err.Error())
+			if tryCount < tries-1 {
+				continue
+			}
+			return err
+		}
+
+		if respJson.Stat == "pass" {
+			break
+		}
 	}
-
-	defer resp.Body.Close()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(resp.Status)
-	fmt.Println(string(bytes))
 
 	return nil
 }
