@@ -30,6 +30,8 @@ import (
 	"time"
 )
 
+const uploadUri = "https://upload.smugmug.com/"
+
 // upload transfers a single file to the SmugMug album identifed by key.
 func upload(albumKey string, filename string) {
 	userToken, err := loadUserToken()
@@ -40,7 +42,7 @@ func upload(albumKey string, filename string) {
 
 	var client = http.Client{}
 
-	err = postImage(&client, userToken, albumKey, filename)
+	err = postImage(&client, uploadUri, userToken, albumKey, filename)
 	if err != nil {
 		log.Println("Error uploading: " + err.Error())
 	}
@@ -87,7 +89,7 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 		semaph <- 1
 		go func(filename string) {
 			fmt.Println("go " + filename)
-			err := postImage(&client, userToken, albumKey, filename)
+			err := postImage(&client, uploadUri, userToken, albumKey, filename)
 			if err != nil {
 				log.Println("Error uploading: " + err.Error())
 			}
@@ -131,7 +133,8 @@ func calcMd5(imgFileName string) (string, int64, error) {
 }
 
 // postImage uploads a single image to SmugMug via the POST method.
-func postImage(client *http.Client, credentials *oauth.Credentials,
+// uri is the protocol + hostname of the server
+func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 	albumKey string, imgFileName string) error {
 
 	md5Str, imgSize, err := calcMd5(imgFileName)
@@ -139,13 +142,12 @@ func postImage(client *http.Client, credentials *oauth.Credentials,
 		return err
 	}
 
-	uploadUri := "https://upload.smugmug.com/"
 	file, err := os.Open(imgFileName)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", uploadUri, file)
+	req, err := http.NewRequest("POST", uri, file)
 	if err != nil {
 		return err
 	}
