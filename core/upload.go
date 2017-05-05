@@ -180,12 +180,12 @@ func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 		req.Header[key] = val
 	}
 
-	if err := oauthClient.SetAuthorizationHeader(
-		req.Header, credentials, "POST", req.URL, url.Values{}); err != nil {
-		return nil
-	}
-
 	for tryCount := 0; tryCount < tries; tryCount++ {
+		if err := oauthClient.SetAuthorizationHeader(
+			req.Header, credentials, "POST", req.URL, url.Values{}); err != nil {
+			return err
+		}
+
 		var resp *http.Response
 		resp, err = client.Do(req)
 		if err != nil {
