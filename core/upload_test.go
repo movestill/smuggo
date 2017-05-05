@@ -26,7 +26,7 @@ import (
 
 type HangupHandler struct {
 	server      *httptest.Server
-	numRequests int
+	numRequests uint
 }
 
 // Count request and rudely hangup connection.
@@ -36,7 +36,7 @@ func (h *HangupHandler) DisconnectResponse(resp http.ResponseWriter, req *http.R
 }
 
 type CountHandler struct {
-	numRequests int
+	numRequests uint
 }
 
 // Count request and indicate failure.
@@ -77,7 +77,7 @@ func TestServerHangsUp(t *testing.T) {
 		os.Exit(1)
 	}
 	f.Close()
-	nTries := 3
+	nTries := uint(3)
 
 	err = postImage(&client, server.URL, userToken, albumKey, filename, nTries)
 
@@ -111,14 +111,14 @@ func TestUploadSuccess(t *testing.T) {
 		os.Exit(1)
 	}
 	f.Close()
-	nTries := 3
+	nTries := uint(3)
 
 	err = postImage(&client, server.URL, userToken, albumKey, filename, nTries)
 	if err != nil {
 		t.Log("Error uploading: " + err.Error())
 	}
 
-	expTries := 1
+	expTries := uint(1)
 	if handler.numRequests != expTries {
 		t.Errorf("Expected %d tries, actual %d", expTries, handler.numRequests)
 	}
@@ -149,7 +149,7 @@ func TestUploadRetries(t *testing.T) {
 		os.Exit(1)
 	}
 	f.Close()
-	nTries := 3
+	nTries := uint(3)
 
 	err = postImage(&client, server.URL, userToken, albumKey, filename, nTries)
 

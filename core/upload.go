@@ -48,7 +48,7 @@ func upload(albumKey string, filename string) {
 
 	var client = http.Client{}
 
-	err = postImage(&client, uploadUri, userToken, albumKey, filename, 3)
+	err = postImage(&client, uploadUri, userToken, albumKey, filename, retriesFlag+1)
 	if err != nil {
 		log.Println("Error uploading: " + err.Error())
 	}
@@ -95,7 +95,7 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 		semaph <- 1
 		go func(filename string) {
 			fmt.Println("go " + filename)
-			err := postImage(&client, uploadUri, userToken, albumKey, filename, 3)
+			err := postImage(&client, uploadUri, userToken, albumKey, filename, retriesFlag+1)
 			if err != nil {
 				log.Println("Error uploading: " + err.Error())
 			}
@@ -141,7 +141,7 @@ func calcMd5(imgFileName string) (string, int64, error) {
 // postImage uploads a single image to SmugMug via the POST method.
 // uri is the protocol + hostname of the server
 func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
-	albumKey string, imgFileName string, tries int) error {
+	albumKey string, imgFileName string, tries uint) error {
 
 	md5Str, imgSize, err := calcMd5(imgFileName)
 	if err != nil {
@@ -180,7 +180,8 @@ func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 		req.Header[key] = val
 	}
 
-	for tryCount := 0; tryCount < tries; tryCount++ {
+	var tryCount uint
+	for tryCount = 0; tryCount < tries; tryCount++ {
 		if err := oauthClient.SetAuthorizationHeader(
 			req.Header, credentials, "POST", req.URL, url.Values{}); err != nil {
 			return err

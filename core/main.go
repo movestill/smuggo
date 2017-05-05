@@ -16,6 +16,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"go-oauth/oauth"
 	"io/ioutil"
@@ -29,6 +30,8 @@ const (
 	apiTokenFile  = "apiToken.json"
 	userTokenFile = "userToken.json"
 )
+
+var retriesFlag uint
 
 // loadToken imports tokens from the given JSON file.
 func loadToken(filename string) (*oauth.Credentials, error) {
@@ -46,22 +49,28 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 // usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " apikey|auth|albums|search|upload|multiupload")
+	fmt.Println(os.Args[0] + " [-retries n] apikey|auth|albums|search|upload|multiupload")
 	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
 	fmt.Println("\tsearch <search term 1> ... <search term n>")
 	fmt.Println("\tupload <album key> <filename>")
 	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")
+	fmt.Println("\nNumber of retries defaults to 2 if not specified.\n")
+}
+
+func init() {
+	flag.UintVar(&retriesFlag, "retries", 2, "number of retries if upload fails")
 }
 
 func main() {
-	if len(os.Args) < 2 {
+	flag.Parse()
+	if len(flag.Args()) < 1 {
 		usage()
 		return
 	}
 
-	loweredCmd := strings.ToLower(os.Args[1])
+	loweredCmd := strings.ToLower(flag.Arg(0))
 	if loweredCmd == "apikey" {
 		apikey()
 		return
@@ -74,30 +83,30 @@ func main() {
 	case "auth":
 		auth()
 	case "upload":
-		if len(os.Args) != 4 {
+		if len(flag.Args()) != 3 {
 			usage()
 			return
 		}
-		upload(os.Args[2], os.Args[3])
+		upload(flag.Arg(1), flag.Arg(2))
 	case "albums":
 		albums()
 	case "search":
-		if len(os.Args) < 3 {
+		if len(flag.Args()) < 2 {
 			usage()
 			return
 		}
-		search(os.Args[2:])
+		search(flag.Args()[1:])
 	case "multiupload":
-		if len(os.Args) < 5 {
+		if len(flag.Args()) < 4 {
 			usage()
 			return
 		}
-		numParallel, err := strconv.Atoi(os.Args[2])
+		numParallel, err := strconv.Atoi(flag.Arg(1))
 		if err != nil {
 			usage()
 			return
 		}
-		multiUpload(numParallel, os.Args[3], os.Args[4:])
+		multiUpload(numParallel, flag.Arg(2), flag.Args()[3:])
 	default:
 		usage()
 		return
