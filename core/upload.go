@@ -143,45 +143,45 @@ func calcMd5(imgFileName string) (string, int64, error) {
 func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 	albumKey string, imgFileName string, tries uint) error {
 
-	md5Str, imgSize, err := calcMd5(imgFileName)
-	if err != nil {
-		return err
-	}
-
-	file, err := os.Open(imgFileName)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", uri, file)
-	if err != nil {
-		return err
-	}
-
-	req.ContentLength = imgSize
-
-	for key, val := range oauthClient.Header {
-		req.Header[key] = val
-	}
-
-	_, justImgFileName := filepath.Split(imgFileName)
-	var headers = url.Values{
-		"Accept":              {"application/json"},
-		"Content-Type":        {getMediaType(justImgFileName)},
-		"Content-MD5":         {md5Str},
-		"Content-Length":      {strconv.FormatInt(imgSize, 10)},
-		"X-Smug-ResponseType": {"JSON"},
-		"X-Smug-AlbumUri":     {"/api/v2/album/" + albumKey},
-		"X-Smug-Version":      {"v2"},
-		"X-Smug-Filename":     {justImgFileName},
-	}
-
-	for key, val := range headers {
-		req.Header[key] = val
-	}
-
 	var tryCount uint
 	for tryCount = 0; tryCount < tries; tryCount++ {
+
+		md5Str, imgSize, err := calcMd5(imgFileName)
+		if err != nil {
+			return err
+		}
+
+		file, err := os.Open(imgFileName)
+		if err != nil {
+			return err
+		}
+
+		req, err := http.NewRequest("POST", uri, file)
+		if err != nil {
+			return err
+		}
+
+		req.ContentLength = imgSize
+
+		for key, val := range oauthClient.Header {
+			req.Header[key] = val
+		}
+
+		_, justImgFileName := filepath.Split(imgFileName)
+		var headers = url.Values{
+			"Accept":              {"application/json"},
+			"Content-Type":        {getMediaType(justImgFileName)},
+			"Content-MD5":         {md5Str},
+			"Content-Length":      {strconv.FormatInt(imgSize, 10)},
+			"X-Smug-ResponseType": {"JSON"},
+			"X-Smug-AlbumUri":     {"/api/v2/album/" + albumKey},
+			"X-Smug-Version":      {"v2"},
+			"X-Smug-Filename":     {justImgFileName},
+		}
+
+		for key, val := range headers {
+			req.Header[key] = val
+		}
 		if err := oauthClient.SetAuthorizationHeader(
 			req.Header, credentials, "POST", req.URL, url.Values{}); err != nil {
 			return err
