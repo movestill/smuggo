@@ -47,10 +47,10 @@ func (c *CountHandler) FailResponse(resp http.ResponseWriter, req *http.Request)
 }
 
 // Count request and indicate success.
-func (c *CountHandler) PassResponse(resp http.ResponseWriter, req *http.Request) {
+func (c *CountHandler) OkResponse(resp http.ResponseWriter, req *http.Request) {
 	c.numRequests++
 	resp.WriteHeader(http.StatusOK)
-	resp.Write([]byte("{\"stat\": \"pass\"}"))
+	resp.Write([]byte("{\"stat\": \"ok\"}"))
 }
 
 // Test that there are 3 tries when the server breaks the connection.
@@ -91,7 +91,7 @@ func TestServerHangsUp(t *testing.T) {
 // Test no retries when first upload attempt succeeds.
 func TestUploadSuccess(t *testing.T) {
 	handler := CountHandler{}
-	server := httptest.NewServer(http.HandlerFunc(handler.PassResponse))
+	server := httptest.NewServer(http.HandlerFunc(handler.OkResponse))
 	defer server.Close()
 
 	getUserHomeDir()

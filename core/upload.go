@@ -221,7 +221,7 @@ func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 			return err
 		}
 
-		if respJson.Stat == "pass" {
+		if respJson.Stat == "ok" {
 			break
 		}
 	}
