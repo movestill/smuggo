@@ -262,6 +262,10 @@ func albums() {
 		return
 	}
 
+	// Resend the first result to the channel so collectAlbumResults() will
+	// get it.
+	epChan <- ep
+
 	waitGrp := sync.WaitGroup{}
 	start := ep.Pages.Count + 1
 
