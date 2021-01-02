@@ -17,11 +17,6 @@ in December 2014, so it was almost like starting from zero, again.
 
 ## Usage
 
-### WARNING
-
-smuggo uses SmugMug's v2 API.  This API is considered **beta**, so use at
-your own risk!
-
 ### Get a SmugMug API Key (do this first!)
 
 The first step is to get your own API key from SmugMug.  Go to this page to
