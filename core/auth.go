@@ -23,6 +23,7 @@ import (
 	"open-golang/open"
 	"os"
 	"os/user"
+	"path"
 )
 
 const (
@@ -35,11 +36,12 @@ const (
 // Handles all OAuth stuff.
 var oauthClient oauth.Client
 
-// Save the home directory for storing JSON files, later.
+// Save the home directory for storing JSON files, later.  This is not used if
+// the user provides a custom home directory as a CLI argument.
 var userHomeDir string
 
 // This is appended to userHomeDir.
-const smuggoDir = "/.smuggo/"
+const smuggoDir = ".smuggo"
 
 // Get and store the user's home directory.
 func getUserHomeDir() string {
@@ -57,13 +59,13 @@ func getUserHomeDir() string {
 func authInit() {
 	getUserHomeDir()
 
-	err := os.MkdirAll(userHomeDir+smuggoDir, os.ModeDir|0700)
+	err := os.MkdirAll(smuggoDirFlag, os.ModeDir|0700)
 	if err != nil {
 		log.Println("Could not create smuggo data folder: " + err.Error())
 		os.Exit(1)
 	}
 
-	apiToken, err := loadToken(userHomeDir + smuggoDir + apiTokenFile)
+	apiToken, err := loadToken(path.Join(smuggoDirFlag, apiTokenFile))
 	if err != nil {
 		log.Println("Error reading " + apiTokenFile + ": " + err.Error())
 		log.Println("Type \"" + os.Args[0] + " apikey\" to enter your SmugMug API key.")
@@ -96,7 +98,7 @@ func apikey() {
 	}
 
 	credentials := oauth.Credentials{key, secret}
-	err := storeAccessData(&credentials, userHomeDir+smuggoDir+apiTokenFile)
+	err := storeAccessData(&credentials, path.Join(smuggoDirFlag, apiTokenFile))
 	if err != nil {
 		fmt.Println("Saving API key: " + err.Error())
 	}
@@ -121,7 +123,7 @@ func auth() {
 		return
 	}
 
-	fullPathTokenFile := userHomeDir + smuggoDir + userTokenFile
+	fullPathTokenFile := path.Join(smuggoDirFlag, userTokenFile)
 
 	if err := storeAccessData(accessCred, fullPathTokenFile); err != nil {
 		log.Println("Error saving access token: " + err.Error())
@@ -171,6 +173,6 @@ func storeAccessData(accessCred *oauth.Credentials, filename string) error {
 
 // Get the user token from the appropriate location.
 func loadUserToken() (*oauth.Credentials, error) {
-	fullPathTokenFile := userHomeDir + smuggoDir + userTokenFile
+	fullPathTokenFile := path.Join(smuggoDirFlag, userTokenFile)
 	return loadToken(fullPathTokenFile)
 }

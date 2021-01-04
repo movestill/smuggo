@@ -21,9 +21,12 @@ import (
 	"go-oauth/oauth"
 	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 )
+
+const version = "v0.4"
 
 // The names of the token files.
 const (
@@ -32,6 +35,7 @@ const (
 )
 
 var retriesFlag uint
+var smuggoDirFlag string
 
 // loadToken imports tokens from the given JSON file.
 func loadToken(filename string) (*oauth.Credentials, error) {
@@ -49,18 +53,22 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 // usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " [-retries n] apikey|auth|albums|search|upload|multiupload")
+	fmt.Println(os.Args[0] + " [-retries n] [-home path] apikey|auth|albums|search|upload|multiupload|version")
 	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
 	fmt.Println("\tsearch <search term 1> ... <search term n>")
 	fmt.Println("\tupload <album key> <filename>")
 	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")
-	fmt.Println("\nNumber of retries defaults to 2 if not specified.\n")
+	fmt.Println("\tversion")
+	fmt.Println("\nhome defaults to ~/" + smuggoDir + " if not specified.")
+	fmt.Println("Number of retries defaults to 2 if not specified.\n")
 }
 
 func init() {
 	flag.UintVar(&retriesFlag, "retries", 2, "number of retries if upload fails")
+	flag.StringVar(&smuggoDirFlag, "home", path.Join(getUserHomeDir(), smuggoDir),
+		"smuggo home folder (defaults to ~/"+smuggoDir+")")
 }
 
 func main() {
@@ -107,6 +115,9 @@ func main() {
 			return
 		}
 		multiUpload(numParallel, flag.Arg(2), flag.Args()[3:])
+	case "version":
+		fmt.Println(os.Args[0] + " " + version + "\n")
+		return
 	default:
 		usage()
 		return

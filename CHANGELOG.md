@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.4 03Jan2021
+
+Added ability to specify home folder where api key and user token stored.
+Added `version` command to report smuggo version.
+
+
 ## v0.3 01Jan2021
 
 Fixed bug where the first album returned would not be printed.
