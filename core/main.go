@@ -18,12 +18,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"go-oauth/oauth"
 	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/gomodule/oauth1/oauth"
 )
 
 const version = "v0.4"

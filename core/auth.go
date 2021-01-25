@@ -17,10 +17,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"go-oauth/oauth"
+	"github.com/gomodule/oauth1/oauth"
+	"github.com/skratchdot/open-golang/open"
 	"io/ioutil"
 	"log"
-	"open-golang/open"
 	"os"
 	"os/user"
 	"path"

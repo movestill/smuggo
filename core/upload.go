@@ -18,7 +18,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"go-oauth/oauth"
+	"github.com/gomodule/oauth1/oauth"
 	"io"
 	"io/ioutil"
 	"log"

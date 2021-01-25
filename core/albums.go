@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go-oauth/oauth"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -28,6 +27,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gomodule/oauth1/oauth"
 )
 
 const (
