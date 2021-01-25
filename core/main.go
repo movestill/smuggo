@@ -63,7 +63,7 @@ func usage() {
 	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")
 	fmt.Println("\tversion")
 	fmt.Println("\nhome defaults to ~/" + smuggoDir + " if not specified.")
-	fmt.Println("Number of retries defaults to 2 if not specified.\n")
+	fmt.Printf("Number of retries defaults to 2 if not specified.\n\n")
 }
 
 func init() {

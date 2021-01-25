@@ -26,7 +26,7 @@ You must be a SmugMug customer to get an key, but that's
 probably a safe assumption if you want to use smuggo.  After getting your key,
 enter your key into smuggo by using the `apikey` command.
 
-```bash
+```shell
 smuggo apikey
 ```
 
@@ -35,7 +35,7 @@ smuggo apikey
 smuggo **must be authorized** before it can do anything with your SmugMug
 account.  Authorize it by typing:
 
-```bash
+```shell
 smuggo auth
 ```
 
@@ -53,7 +53,7 @@ button next to smuggo.
 Before you can upload into an album, you need to know its key.  smuggo has a
 command that lists all your albums and their associated keys.
 
-```bash
+```shell
 smuggo albums
 ```
 
@@ -68,7 +68,7 @@ isn't the most efficient.  smuggo supports SmugMug's album search capability.
 SmugMug searches both the title and description for search terms that you
 supply.
 
-```bash
+```shell
 smuggo search <search term 1> ... <search term n>
 ```
 
@@ -82,13 +82,13 @@ photo as it finishes processing.
 
 Basic syntax:
 
-```bash
+```shell
 smuggo upload <album key> <filename>
 ```
 
 Here's a concrete example:
 
-```bash
+```shell
 smuggo upload 5Jbd2q awesome_photo.jpg
 ```
 
@@ -96,38 +96,38 @@ However, there are times where I may want to upload multiple files outside of
 my normal CaptureOne workflow.  For those times, smuggo supports uploading
 files in parallel.
 
-```bash
+```shell
 smuggo multiupload <num parallel uploads> <album key> <filename 1> . . . <filename n>
 ```
 
-The ```num parallel uploads``` parameter specifies how many simultaneous
+The `num parallel uploads` parameter specifies how many simultaneous
 uploads you'd like to do.  The right number depends on your system and your
 upload bandwidth.  Here's an actual example that specifies up to 4
 simultaneous uploads of two JPEG files and all the GIFs in the current
 directory:
 
-```bash
+```shell
 smuggo multiupload 4 5Jbd2q awesome_photo1.jpg awesome_photo2.jpg *.gif
 ```
 
 
 ## Building from Source
 
-Download and install Go v1.6.x.  Be sure to set your GOPATH environment
+Download and install Go v1.15.x.  Be sure to set your GOPATH environment
 variable as described in the Go installation instructions.
 
-Get the dependencies (sub-modules):
+Get the dependencies:
 
-```bash
-git submodule init
-git submodule update
+```shell
+cd core
+go mod download
 ```
 
 Build:
 
-```bash
+```shell
 cd core
-go build -o smuggo main.go main.go auth.go upload.go albums.go
+make
 ```
 
 ## License
