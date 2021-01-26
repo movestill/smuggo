@@ -4,6 +4,9 @@
 
 * Use go modules
 * Switch to `Makefile`
+* Better fix for not printing first album
+* Linted code base
+
 
 ## v0.4 03Jan2021
 

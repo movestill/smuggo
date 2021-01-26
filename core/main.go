@@ -27,7 +27,7 @@ import (
 	"github.com/gomodule/oauth1/oauth"
 )
 
-const version = "v0.4"
+const version = "v0.5"
 
 // The names of the token files.
 const (
@@ -54,10 +54,11 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 // usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " [-retries n] [-home path] apikey|auth|albums|search|upload|multiupload|version")
+	fmt.Println(os.Args[0] + " [-retries n] [-home path] apikey|auth|albums|images|search|upload|multiupload|version")
 	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
+	fmt.Println("\timages")
 	fmt.Println("\tsearch <search term 1> ... <search term n>")
 	fmt.Println("\tupload <album key> <filename>")
 	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")
@@ -97,6 +98,8 @@ func main() {
 			return
 		}
 		upload(flag.Arg(1), flag.Arg(2))
+	case "images":
+		albumImages(flag.Arg(1))
 	case "albums":
 		albums()
 	case "search":
