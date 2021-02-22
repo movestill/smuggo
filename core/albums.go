@@ -86,6 +86,7 @@ type searchResponseJSON struct {
 
 type imageJSON struct {
 	ArchivedMD5 string
+	FileName    string
 }
 
 type imagesPagesJSON struct {
@@ -452,8 +453,9 @@ func albumImages(albumKey string) {
 
 	fmt.Printf("Got %d images out of %d.\n", img.Pages.Count, img.Pages.Total)
 	if img.Pages.Count >= img.Pages.Total {
-		// ToDo: write hashes to DB.
-		fmt.Printf("Got %d images.\n", img.Pages.Count)
+		db := openDB()
+		defer db.Close()
+		writeImageData(db, albumKey, img.AlbumImage)
 		return
 	}
 
@@ -470,39 +472,45 @@ func albumImages(albumKey string) {
 		start += albumPageSize
 	}
 
-	hashes := make([]imageJSON, img.Pages.Count, img.Pages.Total)
-	copy(hashes, img.AlbumImage)
+	imgData := make([]imageJSON, img.Pages.Count, img.Pages.Total)
+	copy(imgData, img.AlbumImage)
 
 	imgsReqDoneChan := make(chan bool)
-	gotAllHashesChan := make(chan bool)
-	go collectImageResults(hashes, imgsReqDoneChan, imgsChan,
-		gotAllHashesChan)
+	gotAllImgsChan := make(chan bool)
+	go collectImageResults(imgData, albumKey, imgsReqDoneChan, imgsChan,
+		gotAllImgsChan)
 
 	waitGrp.Wait()
 
 	// Tell collectImageResults() that all album image requests finished.
 	imgsReqDoneChan <- true
+
+	// Wait for image data collection to complete.
+	<-gotAllImgsChan
 }
 
 // collectImageResults receives albums over imgsChan from getAlbumImagesPage().
 // It continues to listen to imgsChan until receiving true from imgsReqDoneChan.
-// Finally, it indicates completion by sending true over gotAllHashesChan.
-func collectImageResults(hashes []imageJSON,
-	imgsReqDoneChan chan bool, imgsChan chan imagesJSON, gotAllHashesChan chan bool) {
+// Finally, it indicates completion by sending true over gotAllImgsChan.
+func collectImageResults(imgData []imageJSON, albumKey string,
+	imgsReqDoneChan chan bool, imgsChan chan imagesJSON, gotAllImgsChan chan bool) {
 
 	done := false
 	for !done || len(imgsChan) > 0 {
 		select {
 		case newImages := <-imgsChan:
-			hashes = append(hashes, newImages.AlbumImage...)
+			imgData = append(imgData, newImages.AlbumImage...)
 		case done = <-imgsReqDoneChan:
 		}
 	}
 
-	// ToDo: write hashes to DB.
-	fmt.Println("Got", len(hashes), "hashes")
+	fmt.Println("Got", len(imgData), "images")
 
-	gotAllHashesChan <- true
+	db := openDB()
+	defer db.Close()
+	writeImageData(db, albumKey, imgData)
+
+	gotAllImgsChan <- true
 }
 
 func getAlbumImagesPage(
@@ -513,7 +521,7 @@ func getAlbumImagesPage(
 	var queryParams = url.Values{
 		"_accept":    {"application/json"},
 		"_verbosity": {"1"},
-		"_filter":    {"ArchivedMD5"},
+		"_filter":    {"ArchivedMD5,FileName"},
 		"_filteruri": {""},
 		"start":      {fmt.Sprintf("%d", start)},
 		"count":      {"count"},

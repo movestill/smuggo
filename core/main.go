@@ -58,7 +58,7 @@ func usage() {
 	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
-	fmt.Println("\timages")
+	fmt.Println("\timages <album key>")
 	fmt.Println("\tsearch <search term 1> ... <search term n>")
 	fmt.Println("\tupload <album key> <filename>")
 	fmt.Println("\tmultiupload <# parallel uploads> <album key> <filename 1> ... <filename n>")

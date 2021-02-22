@@ -17,12 +17,15 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
 )
 
-const testDir = "expandTestDir"
+const testSubfolderName = "expandFileTest"
+
+var testDir string
 
 var testFileNames = []string{
 	"milk.jpg", "orange.png", "star.png", "rose.jpg"}
@@ -66,7 +69,7 @@ func TestStar(t *testing.T) {
 		testDir + "/orange.png",
 		testDir + "/rose.jpg",
 		testDir + "/star.png"}
-	actual := expandFileNames([]string{testDir + "/*"}, filepath.Glob)
+	actual := expandFileNames([]string{path.Join(testDir, "/*")}, filepath.Glob)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("expected: %s, actual: %s", expected, actual)
@@ -74,8 +77,8 @@ func TestStar(t *testing.T) {
 }
 
 func TestStarJpg(t *testing.T) {
-	expected := []string{testDir + "/milk.jpg", testDir + "/rose.jpg"}
-	actual := expandFileNames([]string{testDir + "/*.jpg"}, filepath.Glob)
+	expected := []string{path.Join(testDir, "/milk.jpg"), path.Join(testDir, "/rose.jpg")}
+	actual := expandFileNames([]string{path.Join(testDir, "/*.jpg")}, filepath.Glob)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("expected: %s, actual: %s", expected, actual)
@@ -83,35 +86,36 @@ func TestStarJpg(t *testing.T) {
 }
 
 func TestStarPng(t *testing.T) {
-	expected := []string{testDir + "/orange.png", testDir + "/star.png"}
-	actual := expandFileNames([]string{testDir + "/*.png"}, filepath.Glob)
+	expected := []string{path.Join(testDir, "/orange.png"), path.Join(testDir, "/star.png")}
+	actual := expandFileNames([]string{path.Join(testDir, "/*.png")}, filepath.Glob)
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("expected: %s, actual: %s", expected, actual)
 	}
 }
 
-func TestMain(m *testing.M) {
-	if err := os.Mkdir(testDir, os.ModeDir|0755); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	for _, name := range testFileNames {
-		f, err := os.Create(testDir + "/" + name)
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-		f.Close()
-	}
-
-	exitCode := m.Run()
-
+func tearDown() {
 	if err := os.RemoveAll(testDir); err != nil {
 		fmt.Println(err.Error())
-		os.Exit(1)
+	}
+}
+
+func TestMain(m *testing.M) {
+	testDir = path.Join(os.TempDir(), testSubfolderName)
+	if err := os.Mkdir(testDir, os.ModeDir|0755); err != nil {
+		fmt.Println(err.Error())
 	}
 
-	os.Exit(exitCode)
+	defer tearDown()
+
+	for _, name := range testFileNames {
+		f, err := os.Create(path.Join(testDir, name))
+		defer f.Close()
+		if err != nil {
+			fmt.Println(err.Error())
+			break
+		}
+	}
+
+	m.Run()
 }
