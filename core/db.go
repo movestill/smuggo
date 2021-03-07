@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-const dbFile = "./images.db"
 
 const imageTable = "images"
 const imageTableVersion = 1
@@ -46,7 +45,9 @@ var imgTableInsertSQL = fmt.Sprintf("INSERT INTO %s (album_key, hash, filename) 
 var imgTableDeleteSQL = fmt.Sprintf("DELETE FROM %s WHERE album_key = ?;", imageTable)
 var imgTableGetDupesSQL = fmt.Sprintf("SELECT filename FROM %s WHERE album_key = ? AND hash = ?", imageTable)
 
-func init() {
+// Ensure DB exists and is a compatible version.
+func initDB() {
+	dbFile := path.Join(smuggoDirFlag, "images.db")
 	var createDb = false
 	_, pathErr := os.Stat(dbFile)
 	if pathErr != nil {
@@ -57,6 +58,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Error opening database %s: %q\n", dbFile, err)
 	}
+	defer db.Close()
 
 	if createDb {
 		createTables(db, imageTableVersion)
@@ -65,15 +67,16 @@ func init() {
 	if err := validateTables(db); err != nil {
 		log.Fatal(err)
 	}
-
-	defer db.Close()
 }
 
 func openDB() *sql.DB {
+	dbFile := path.Join(smuggoDirFlag, "images.db")
+
 	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		log.Fatalf("Error opening database %s: %q\n", dbFile, err)
 	}
+
 	return db
 }
 

@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## v0.5 07Marh2021
 
 * Upgraded to Go 1.16
 * Use go modules

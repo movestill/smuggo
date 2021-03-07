@@ -91,6 +91,8 @@ func main() {
 		return
 	}
 
+	initDB()
+
 	// Normal code path where an API key must exist.
 	authInit()
 
