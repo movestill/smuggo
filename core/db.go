@@ -28,15 +28,23 @@ const dbFile = "./images.db"
 
 const imageTable = "images"
 const imageTableVersion = 1
+const imageTableHashIndexName = "images_hash_index"
+const imageTableAblumKeyIndexName = "images_ablum_key_index"
 
 const versionTable = "table_versions"
 
 var imgTableCreateSQL = fmt.Sprintf(
 	"CREATE TABLE %s (id INTEGER NOT NULL PRIMARY KEY, album_key TEXT, hash TEXT, filename TEXT);", imageTable)
+var imgTableHashIndexSQL = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s (hash)",
+	imageTableHashIndexName, imageTable)
+var imgTableAlbumKeyIndexSQL = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s (album_key)",
+	imageTableAblumKeyIndexName, imageTable)
 var verTableCreateSQL = fmt.Sprintf(
 	"CREATE TABLE %s (id INTEGER NOT NULL PRIMARY KEY, name TEXT, version INTEGER);", versionTable)
 
 var imgTableInsertSQL = fmt.Sprintf("INSERT INTO %s (album_key, hash, filename) VALUES (?, ?, ?);", imageTable)
+var imgTableDeleteSQL = fmt.Sprintf("DELETE FROM %s WHERE album_key = ?;", imageTable)
+var imgTableGetDupesSQL = fmt.Sprintf("SELECT filename FROM %s WHERE album_key = ? AND hash = ?", imageTable)
 
 func init() {
 	var createDb = false
@@ -69,11 +77,11 @@ func openDB() *sql.DB {
 	return db
 }
 
-// Create tables for an empty DB.
+// Create tables and indices for an empty DB.
 // If more tables added, will need to rethink accepting a single version
 // parameter.
 func createTables(db *sql.DB, imgTableVersion int) {
-	createSQL := fmt.Sprintf("%s\n%s", imgTableCreateSQL, verTableCreateSQL)
+	createSQL := fmt.Sprintf("%s\n%s\n%s", imgTableCreateSQL, verTableCreateSQL, imgTableHashIndexSQL)
 
 	_, err := db.Exec(createSQL)
 	if err != nil {
@@ -125,6 +133,7 @@ func validateTables(db *sql.DB) error {
 	return nil
 }
 
+// Write image data for the given images to the DB.
 func writeImageData(db *sql.DB, albumKey string, imgData []imageJSON) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -149,4 +158,52 @@ func writeImageData(db *sql.DB, albumKey string, imgData []imageJSON) {
 	}
 
 	tx.Commit()
+}
+
+// Remove all image data for the given album.
+func removeAlbumImages(db *sql.DB, albumKey string) {
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	deleteSQL, err := tx.Prepare(imgTableDeleteSQL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer deleteSQL.Close()
+	_, err = deleteSQL.Exec(albumKey)
+	if err != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			log.Fatalf("Failed deleting image data for album: %s: %v, rollback failed: %v\n",
+				albumKey, err, rollbackErr)
+		}
+		log.Fatal(err)
+	}
+
+	tx.Commit()
+}
+
+// Get duplicates images from an album based on the given MD5 hash.
+func getDuplicateImages(db *sql.DB, albumKey string, hash string) []string {
+	filenames := make([]string, 0, 5)
+	rows, err := db.Query(imgTableGetDupesSQL, albumKey, hash)
+	if err != nil {
+		log.Println("Error building query that checks for duplicate images")
+		return filenames
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var filename string
+		err = rows.Scan(&filename)
+		if err != nil {
+			log.Println(err)
+		}
+		filenames = append(filenames, filename)
+	}
+
+	return filenames
 }

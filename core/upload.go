@@ -16,6 +16,7 @@ package main
 
 import (
 	"crypto/md5"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -39,8 +40,19 @@ type uploadResponseJSON struct {
 	Message string
 }
 
+// Returns true if image's MD5 hash already exists in the given album.  If there
+// are duplicates, an array of filenames of the duplicates is also returned.  If
+// an error reading the DB occurs, will return false under the assumption that
+// it's better to allow a duplicate upload than to abort.
+func isDuplicateImage(db *sql.DB, albumKey string, hash string) (bool, []string) {
+	filenames := getDuplicateImages(db, albumKey, hash)
+	dupe := len(filenames) > 0
+
+	return dupe, filenames
+}
+
 // upload transfers a single file to the SmugMug album identifed by key.
-func upload(albumKey string, filename string) {
+func upload(allowDupes bool, albumKey string, filename string) {
 	userToken, err := loadUserToken()
 	if err != nil {
 		log.Println("Error reading OAuth token: " + err.Error())
@@ -48,8 +60,10 @@ func upload(albumKey string, filename string) {
 	}
 
 	var client = http.Client{}
+	db := openDB()
+	defer db.Close()
 
-	err = postImage(&client, uploadURI, userToken, albumKey, filename, retriesFlag+1)
+	err = postImage(&client, uploadURI, userToken, db, allowDupes, albumKey, filename, retriesFlag+1)
 	if err != nil {
 		log.Println("Error uploading: " + err.Error())
 	}
@@ -75,7 +89,7 @@ func expandFileNames(
 }
 
 // multiUpload uploads files in parallel to the given SmugMug album.
-func multiUpload(numParallel int, albumKey string, filenames []string) {
+func multiUpload(numParallel int, allowDupes bool, albumKey string, filenames []string) {
 	if numParallel < 1 {
 		log.Println("Error, must upload at least 1 file at a time!")
 		return
@@ -90,13 +104,15 @@ func multiUpload(numParallel int, albumKey string, filenames []string) {
 	expFileNames := expandFileNames(filenames, filepath.Glob)
 	fmt.Println(expFileNames)
 	var client = http.Client{}
+	db := openDB()
+	defer db.Close()
 
 	semaph := make(chan int, numParallel)
 	for _, filename := range expFileNames {
 		semaph <- 1
 		go func(filename string) {
 			fmt.Println("go " + filename)
-			err := postImage(&client, uploadURI, userToken, albumKey, filename, retriesFlag+1)
+			err := postImage(&client, uploadURI, userToken, db, allowDupes, albumKey, filename, retriesFlag+1)
 			if err != nil {
 				log.Println("Error uploading: " + err.Error())
 			}
@@ -142,15 +158,28 @@ func calcMD5(imgFileName string) (string, int64, error) {
 // postImage uploads a single image to SmugMug via the POST method.
 // uri is the protocol + hostname of the server
 func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
+	db *sql.DB, allowDupes bool,
 	albumKey string, imgFileName string, tries uint) error {
 
+	md5Str, imgSize, err := calcMD5(imgFileName)
+	if err != nil {
+		return err
+	}
+
+	if !allowDupes {
+		isDupe, filenames := isDuplicateImage(db, albumKey, md5Str)
+		if isDupe {
+			fmt.Printf("Not uploading %s, duplicate images in album:\n", imgFileName)
+			for _, f := range filenames {
+				fmt.Printf("\t%s\n", f)
+			}
+			return nil
+		}
+	}
+
+	var success = false
 	var tryCount uint
 	for tryCount = 0; tryCount < tries; tryCount++ {
-
-		md5Str, imgSize, err := calcMD5(imgFileName)
-		if err != nil {
-			return err
-		}
 
 		file, err := os.Open(imgFileName)
 		if err != nil {
@@ -223,9 +252,16 @@ func postImage(client *http.Client, uri string, credentials *oauth.Credentials,
 		}
 
 		if respJSON.Stat == "ok" {
+			success = true
 			break
 		}
 	}
 
-	return nil
+	if success {
+		imgData := []imageJSON{{md5Str, imgFileName}}
+		writeImageData(db, albumKey, imgData)
+		return nil
+	}
+
+	return fmt.Errorf("SmugMug unable to receive image after %d attempts", tries)
 }

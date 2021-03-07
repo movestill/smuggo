@@ -2,10 +2,14 @@
 
 ## Unreleased
 
+* Upgraded to Go 1.16
 * Use go modules
 * Switch to `Makefile`
-* Better fix for not printing first album
+* Improved fix for not printing first album returned by `albums` command
 * Linted code base
+* Added `images` command (requires SQLite database)
+* Prevent uploading duplicate images by default
+* Improved test cleanup
 
 
 ## v0.4 03Jan2021

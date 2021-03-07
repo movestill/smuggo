@@ -455,6 +455,10 @@ func albumImages(albumKey string) {
 	if img.Pages.Count >= img.Pages.Total {
 		db := openDB()
 		defer db.Close()
+
+		// First remove any image data for the given album because we are getting
+		// new truth data.
+		removeAlbumImages(db, albumKey)
 		writeImageData(db, albumKey, img.AlbumImage)
 		return
 	}
@@ -508,6 +512,12 @@ func collectImageResults(imgData []imageJSON, albumKey string,
 
 	db := openDB()
 	defer db.Close()
+
+	// First remove any image data for the given album because we are getting
+	// new truth data.
+	removeAlbumImages(db, albumKey)
+
+	// Save the data received from SmugMug.
 	writeImageData(db, albumKey, imgData)
 
 	gotAllImgsChan <- true

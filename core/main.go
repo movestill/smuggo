@@ -38,6 +38,9 @@ const (
 var retriesFlag uint
 var smuggoDirFlag string
 
+// Whether duplicate images (same MD5 hash) are allowed when uploading.
+var allowDupesFlag bool
+
 // loadToken imports tokens from the given JSON file.
 func loadToken(filename string) (*oauth.Credentials, error) {
 	bytes, err := ioutil.ReadFile(filename)
@@ -54,7 +57,7 @@ func loadToken(filename string) (*oauth.Credentials, error) {
 // usage gives minimal usage instructions.
 func usage() {
 	fmt.Println("Usage: ")
-	fmt.Println(os.Args[0] + " [-retries n] [-home path] apikey|auth|albums|images|search|upload|multiupload|version")
+	fmt.Println(os.Args[0] + " [-retries n] [-home path] [-allowDupes] apikey|auth|albums|images|search|upload|multiupload|version")
 	fmt.Println("\tapikey")
 	fmt.Println("\tauth")
 	fmt.Println("\talbums")
@@ -71,6 +74,8 @@ func init() {
 	flag.UintVar(&retriesFlag, "retries", 2, "number of retries if upload fails")
 	flag.StringVar(&smuggoDirFlag, "home", path.Join(getUserHomeDir(), smuggoDir),
 		"smuggo home folder (defaults to ~/"+smuggoDir+")")
+	flag.BoolVar(&allowDupesFlag, "allowDupes", false,
+		"allow duplicate images during uploads (defaults to no)")
 }
 
 func main() {
@@ -97,7 +102,7 @@ func main() {
 			usage()
 			return
 		}
-		upload(flag.Arg(1), flag.Arg(2))
+		upload(allowDupesFlag, flag.Arg(1), flag.Arg(2))
 	case "images":
 		albumImages(flag.Arg(1))
 	case "albums":
@@ -118,7 +123,7 @@ func main() {
 			usage()
 			return
 		}
-		multiUpload(numParallel, flag.Arg(2), flag.Args()[3:])
+		multiUpload(numParallel, allowDupesFlag, flag.Arg(2), flag.Args()[3:])
 	case "version":
 		fmt.Println(os.Args[0] + " " + version + "\n")
 		return
